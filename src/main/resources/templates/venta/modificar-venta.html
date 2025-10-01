@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout ('Modificar Venta', ~{::content})}">
+<head>
+    <title>Modificar Venta - Sistema SIVIL</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        .card {
+            border: none;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: #28a745;
+            box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+        }
+
+        .btn-warning {
+            background: linear-gradient(45deg, #ffc107, #fd7e14);
+            border: none;
+            border-radius: 8px;
+            padding: 12px 30px;
+            font-weight: 600;
+            transition: all 0.3s;
+            color: white;
+        }
+
+        .btn-warning:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255, 193, 7, 0.3);
+            color: white;
+        }
+
+        .btn-success {
+            background: linear-gradient(45deg, #28a745, #20c997);
+            border: none;
+            border-radius: 8px;
+            padding: 12px 30px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #007bff, #0056b3);
+            border: none;
+            border-radius: 6px;
+            transition: all 0.3s;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 3px 8px rgba(0, 123, 255, 0.3);
+        }
+
+        .table {
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .table-dark {
+            background: linear-gradient(45deg, #343a40, #495057);
+        }
+
+        .input-group {
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .badge {
+            font-size: 0.8rem;
+            padding: 6px 12px;
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 8px;
+        }
+
+        .text-muted {
+            font-size: 0.875rem;
+        }
+
+        .page-header {
+            background: linear-gradient(135deg, #ffc107, #fd7e14);
+            color: white;
+            padding: 2rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+        }
+
+        .stats-card {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .section-divider {
+            border: none;
+            height: 2px;
+            background: linear-gradient(90deg, #ffc107, #fd7e14);
+            margin: 2rem 0;
+            border-radius: 2px;
+        }
+
+        .form-control:read-only {
+            background-color: #f8f9fa;
+            border-color: #e9ecef;
+        }
+
+        .form-control:read-only:focus {
+            border-color: #e9ecef;
+            box-shadow: none;
+        }
+
+        .stock-info {
+            font-size: 0.8rem;
+            color: #6c757d;
+            margin-top: 0.25rem;
+        }
+    </style>
+</head>
+<body>
+<div th:fragment="content">
+    <!-- Header de la página -->
+    <div class="page-header">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h2 class="mb-2">
+                    <i class="bi bi-pencil-square me-3"></i>
+                    Modificar Venta
+                </h2>
+                <p class="mb-0 opacity-75">Edite los datos de la venta seleccionada</p>
+            </div>
+            <div class="col-md-4 text-end">
+                <div class="stats-card">
+                    <h5 class="mb-1">Número de Factura</h5>
+                    <h3 class="mb-0" th:text="${venta.numero_factura}">FAC-001</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mensajes -->
+    <div th:if="${mensaje}" class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle"></i> <span th:text="${mensaje}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle"></i> <span th:text="${error}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <form th:action="@{|/ventas/${venta.id_venta}/modificar|}" th:object="${venta}" method="post" id="ventaForm">
+        <div class="row g-4">
+            <!-- Información del Cliente -->
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">
+                            <i class="bi bi-person-circle me-2"></i>
+                            Información del Cliente
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">
+                                <i class="bi bi-receipt me-2"></i>Número de factura:
+                            </label>
+                            <input type="text" th:field="*{numero_factura}" class="form-control" readonly>
+                            <small class="text-muted">
+                                <i class="bi bi-info-circle me-1"></i>Número de factura no modificable
+                            </small>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">
+                                <i class="bi bi-person me-2"></i>Nombre cliente: <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" th:field="*{nombre_cliente}" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">
+                                <i class="bi bi-telephone me-2"></i>Contacto cliente: <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" th:field="*{contacto_cliente}" class="form-control"
+                                   placeholder="7758-3432" maxlength="9" required
+                                   oninput="formatearContacto(this)">
+                            <small class="text-muted">
+                                <i class="bi bi-info-circle me-1"></i>Formato: 7758-3432
+                            </small>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">
+                                <i class="bi bi-card-text me-2"></i>Identificación cliente (DUI):
+                            </label>
+                            <input type="text" th:field="*{identificacion_cliente}" class="form-control"
+                                   placeholder="06308398-3" maxlength="10"
+                                   oninput="formatearDUI(this)">
+                            <small class="text-muted">
+                                <i class="bi bi-info-circle me-1"></i>Formato: 06308398-3 (Opcional)
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Resumen de Venta -->
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">
+                            <i class="bi bi-calculator me-2"></i>
+                            Resumen de Venta
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">
+                                <i class="bi bi-currency-dollar me-2"></i>Subtotal:
+                            </label>
+                            <input type="number" step="0.01" th:field="*{subtotal}" class="form-control" readonly
+                                   id="subtotalInput">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">
+                                <i class="bi bi-receipt-cutoff me-2"></i>Impuestos (13%):
+                            </label>
+                            <input type="number" step="0.01" th:field="*{impuestos}" class="form-control" readonly
+                                   id="impuestosInput">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold text-success">
+                                <i class="bi bi-cash-stack me-2"></i>Total:
+                            </label>
+                            <input type="number" step="0.01" th:field="*{total}"
+                                   class="form-control fw-bold border-success" readonly id="totalInput">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <hr class="section-divider">
+
+        <!-- Selección de libros existentes en la venta -->
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-book me-2"></i>
+                    Libros en la Venta
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped mb-0" id="tablaLibrosAgregados">
+                        <thead class="table-dark">
+                        <tr>
+                            <th><i class="bi bi-book me-2"></i>Libro</th>
+                            <th><i class="bi bi-currency-dollar me-2"></i>Precio Unitario</th>
+                            <th><i class="bi bi-hash me-2"></i>Cantidad</th>
+                            <th><i class="bi bi-calculator me-2"></i>Subtotal</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <!-- Libros existentes en la venta -->
+                        <tr th:each="detalle : ${venta.detallesVenta}">
+                            <td>
+                                <span th:text="${detalle.libro.titulo}">Libro</span>
+                                <div class="stock-info">
+                                    <i class="bi bi-box-seam"></i> Stock disponible:
+                                    <span th:text="${detalle.libro.cantidad_stock}">0</span> unidades
+                                </div>
+                            </td>
+                            <td th:text="${'₡' + #numbers.formatDecimal(detalle.precio_unitario, 1, 'COMMA', 2, 'POINT')}">
+                                ₡0.00
+                            </td>
+                            <td>
+                                <input type="number"
+                                       th:value="${detalle.cantidad}"
+                                       th:name="'cantidades[' + ${detalle.id_detalle_venta} + ']'"
+                                       min="1"
+                                       max="1000"
+                                       class="form-control cantidad-input"
+                                       th:attr="data-libro-id=${detalle.libro.id_libro},
+                                                data-stock-original=${detalle.libro.cantidad_stock},
+                                                data-cantidad-original=${detalle.cantidad}">
+                                <small class="text-muted">Máx: <span
+                                        th:text="${detalle.libro.cantidad_stock + detalle.cantidad}">0</span></small>
+                            </td>
+                            <td class="subtotal-item"
+                                th:text="${'₡' + #numbers.formatDecimal(detalle.subtotal_item, 1, 'COMMA', 2, 'POINT')}">
+                                ₡0.00
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-4 text-center">
+            <button type="submit" class="btn btn-success btn-lg me-3">
+                <i class="bi bi-check-circle me-2"></i>Guardar Cambios
+            </button>
+            <a th:href="@{/ventas/listar}" class="btn btn-outline-secondary btn-lg">
+                <i class="bi bi-arrow-left me-2"></i>Cancelar
+            </a>
+        </div>
+    </form>
+
+    <!-- Script combinado -->
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        document.addEventListener('DOMContentLoaded', function() {
+            const tabla = document.getElementById('tablaLibrosAgregados');
+            const subtotalInput = document.getElementById('subtotalInput');
+            const impuestosInput = document.getElementById('impuestosInput');
+            const totalInput = document.getElementById('totalInput');
+            const form = document.getElementById('ventaForm');
+
+            function recalcularTotales() {
+                let subtotal = 0;
+
+                tabla.querySelectorAll('tbody tr').forEach(row => {
+                    const precioText = row.cells[1].textContent.replace(/[^\d.,]/g, '').replace(',', '.');
+                    const precio = parseFloat(precioText) || 0;
+
+                    const cantidadInput = row.querySelector('.cantidad-input');
+                    const cantidad = parseInt(cantidadInput.value) || 0;
+                    const subtotalItem = precio * cantidad;
+
+                    row.cells[3].textContent = '₡' + subtotalItem.toFixed(2);
+                    subtotal += subtotalItem;
+                });
+
+                const subtotalDecimal = parseFloat(subtotal.toFixed(2));
+                const impuestos = subtotalDecimal * 0.13;
+                const total = subtotalDecimal + impuestos;
+
+                subtotalInput.value = subtotalDecimal.toFixed(2);
+                impuestosInput.value = impuestos.toFixed(2);
+                totalInput.value = total.toFixed(2);
+            }
+
+            tabla.addEventListener('input', function(e) {
+                if (e.target.classList.contains('cantidad-input')) {
+                    const cantidad = parseInt(e.target.value) || 0;
+                    const stock = parseInt(e.target.getAttribute('data-stock-original')) || 0;
+                    if (cantidad < 1) e.target.value = 1;
+                    else if (cantidad > stock) e.target.value = stock;
+                    recalcularTotales();
+                }
+            });
+
+            form.addEventListener('submit', function(e) {
+                let tieneLibros = false;
+                tabla.querySelectorAll('tbody tr').forEach(row => {
+                    if (row.style.display !== 'none') tieneLibros = true;
+                });
+                if (!tieneLibros) {
+                    e.preventDefault();
+                    alert('La venta debe tener al menos un libro.');
+                    return;
+                }
+                if (!confirm('¿Está seguro de que desea guardar los cambios en esta venta?')) {
+                    e.preventDefault();
+                }
+            });
+
+            recalcularTotales();
+        });
+        /*]]>*/
+    </script>
+
+    <script>
+        function formatearContacto(input) {
+            let value = input.value.replace(/\D/g, '');
+            if (value.length > 4) value = value.substring(0, 4) + '-' + value.substring(4, 8);
+            input.value = value;
+        }
+
+        function formatearDUI(input) {
+            let value = input.value.replace(/\D/g, '');
+            if (value.length > 8) value = value.substring(0, 8) + '-' + value.substring(8, 9);
+            input.value = value;
+        }
+    </script>
+</div>
+</body>
+</html>

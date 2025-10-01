@@ -18,15 +18,24 @@
                     </li>
 
 
-                    <li class="nav-item me-2"
+
+                    <!-- Botón Venta modificado (antes Realizar Venta) -->
+                    <li class="nav-item dropdown me-2"
                         th:if="${currentUser != null and (currentUser.tipo_usuario.name() == 'admin' or currentUser.tipo_usuario.name() == 'vendedor')}">
-                        <a class="nav-link btn btn-outline-success rounded-pill px-3 py-2"
-                           th:href="@{/ventas/crear}"
+                        <a class="nav-link btn btn-outline-success rounded-pill px-3 py-2 dropdown-toggle" href="#" id="ventasDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false"
                            style="text-decoration: none;"
                            onmouseover="this.style.backgroundColor='#198754'; this.style.borderColor='#198754'; this.style.color='white';"
                            onmouseout="this.style.backgroundColor='transparent'; this.style.borderColor='#198754'; this.style.color='#198754';">
-                            <i class="bi bi-cash-register me-1"></i> Realizar Venta
+                            <i class="bi bi-currency-dollar me-1"></i> Venta
                         </a>
+                        <ul class="dropdown-menu" aria-labelledby="ventasDropdown">
+                            <li><a class="dropdown-item" th:href="@{/ventas/crear}">
+                                <i class="bi bi-cash-coin me-2"></i>Realizar Venta
+                            </a></li>
+                            <li><a class="dropdown-item" th:href="@{/ventas/listar}">
+                                <i class="bi bi-receipt me-2"></i>Listar Ventas
+                            </a></li>
+                        </ul>
                     </li>
 
 

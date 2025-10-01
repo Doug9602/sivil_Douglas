@@ -56,7 +56,7 @@ public class Venta {
     @Column(columnDefinition = "TEXT")
     private String motivo_inactivacion;
 
-    @Column(insertable = false, updatable = false)
+    @Column(name = "fecha_venta", insertable = false, updatable = false)
     private LocalDateTime fecha_venta;
 
     @Column(insertable = false, updatable = false)

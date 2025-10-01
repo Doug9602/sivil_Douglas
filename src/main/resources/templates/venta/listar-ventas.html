@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout ('Ventas - Sistema SIVIL', ~{::content})}">
+<head>
+    <title>Ventas - Sistema SIVIL</title>
+</head>
+<body>
+<div th:fragment="content">
+    <div class="row mb-4">
+        <div class="col-12 d-flex justify-content-between align-items-center">
+            <div>
+                <h2><i class="bi bi-receipt"></i> Gestión de Ventas</h2>
+                <p class="text-muted">Listado de ventas finalizadas en el sistema</p>
+            </div>
+            <a th:href="@{/ventas/crear}" class="btn btn-success">
+                <i class="bi bi-plus-circle"></i> Nueva Venta
+            </a>
+        </div>
+    </div>
+
+    <!-- Mensaje de éxito -->
+    <div th:if="${ok}" class="alert alert-success" th:text="${ok}"></div>
+
+    <!-- Mensaje de error -->
+    <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
+
+    <!-- Tarjetas de estadísticas -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Total Ventas</h5>
+                    <p class="card-text display-6" th:text="${totalVentas}">0</p>
+                </div>
+            </div>
+        </div>
+        <!-- Se eliminaron las tarjetas de Ventas Activas, Ventas Hoy y Promedio por Venta -->
+        <!-- Para mantener el espacio visual, podrías dejar los otros 3 col-md-3 vacíos si lo deseas -->
+        <div class="col-md-9"></div>
+    </div>
+
+    <!-- Tabla de ventas -->
+    <div class="table-responsive">
+        <table class="table table-striped table-hover align-middle">
+            <thead class="table-dark">
+            <tr>
+                <th>N° Factura</th>
+                <th>Fecha</th>
+                <th>Cliente</th>
+                <th>Vendedor</th>
+                <th class="text-end">Subtotal</th>
+                <th class="text-end">Impuestos</th>
+                <th class="text-end">Total</th>
+                <th>Método Pago</th>
+                <th>Estado</th>
+                <th class="text-center">Acciones</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="venta : ${ventas}">
+                <td th:text="${venta.numero_factura}">FAC-001</td>
+                <td th:text="${venta.fecha_venta != null} ? ${#temporals.format(venta.fecha_venta, 'dd/MM/yyyy HH:mm')} : '-'">01/01/2023</td>
+                <td th:text="${venta.nombre_cliente}">Cliente Ejemplo</td>
+                <td th:text="${venta.vendedor?.nombre_completo}">Vendedor</td>
+                <td class="text-end" th:text="${#numbers.formatCurrency(venta.subtotal)}">$0.00</td>
+                <td class="text-end" th:text="${#numbers.formatCurrency(venta.impuestos)}">$0.00</td>
+                <td class="text-end fw-bold" th:text="${#numbers.formatCurrency(venta.total)}">$0.00</td>
+                <td>
+                    <span class="badge bg-info" th:if="${venta.tipo_pago.name() == 'efectivo'}">Efectivo</span>
+                    <span class="badge bg-primary" th:if="${venta.tipo_pago.name() == 'tarjeta'}">Tarjeta</span>
+                </td>
+                <td>
+                    <span class="badge bg-success" th:if="${venta.estado.name() == 'activa'}">Activa</span>
+                    <span class="badge bg-secondary" th:if="${venta.estado.name() == 'inactiva'}">Inactiva</span>
+                    <span class="badge bg-primary" th:if="${venta.estado.name() == 'finalizada'}">Finalizada</span>
+                </td>
+                <td class="text-center">
+                    <!-- Botón Modificar -->
+                    <a th:href="@{|/ventas/${venta.id_venta}/modificar|}" class="btn btn-sm btn-outline-warning">
+                        <i class="bi bi-pencil"></i> Modificar
+                    </a>
+                    <!-- Botón Buscar en desarrollo -->
+                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="alert('Funcionalidad en desarrollo')">
+                        <i class="bi bi-search"></i> Buscar
+                    </button>
+                </td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(ventas)}">
+                <td colspan="10" class="text-center text-muted">No hay ventas finalizadas registradas</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+</body>
+</html>
