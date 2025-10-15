@@ -82,8 +82,6 @@ public class VentaController {
         return "venta/listar-ventas";
     }
 
-
-
     @GetMapping("/{id}/modificar")
     public String mostrarFormularioModificacion(@PathVariable("id") Integer id, Model model) {
         try {
@@ -100,7 +98,7 @@ public class VentaController {
             model.addAttribute("libros", libros);
             model.addAttribute("modoEdicion", true);
 
-            return "venta/modificar-venta"; // Asegúrate que este sea el nombre correcto de tu template
+            return "venta/modificar-venta";
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -109,13 +107,12 @@ public class VentaController {
         }
     }
 
-
-
     @PostMapping("/{id}/modificar")
     public String actualizarVenta(
             @PathVariable("id") Integer id,
             @ModelAttribute("venta") Venta ventaActualizada,
             @RequestParam Map<String, String> requestParams,
+            @RequestParam(value = "descuento_aplicado", required = false, defaultValue = "0") BigDecimal descuentoAplicado,
             Model model) {
 
         try {
@@ -140,7 +137,7 @@ public class VentaController {
 
             BigDecimal subtotal = BigDecimal.ZERO;
             List<DetalleVenta> detallesAEliminar = new ArrayList<>();
-            Map<Integer, Integer> cambiosStock = new HashMap<>(); // Para trackear cambios de stock
+            Map<Integer, Integer> cambiosStock = new HashMap<>();
 
             // Procesar cada detalle de venta
             for (DetalleVenta detalle : ventaExistente.getDetallesVenta()) {
@@ -165,7 +162,7 @@ public class VentaController {
 
                         // Validar stock antes de actualizar
                         Libro libro = detalle.getLibro();
-                        int stockDisponible = libro.getCantidad_stock() + cantidadOriginal; // Stock + cantidad original
+                        int stockDisponible = libro.getCantidad_stock() + cantidadOriginal;
 
                         if (cantidadNueva > stockDisponible) {
                             model.addAttribute("error", "Stock insuficiente para: " + libro.getTitulo() +
@@ -187,6 +184,9 @@ public class VentaController {
 
                         subtotal = subtotal.add(subtotalItem);
 
+                        // GUARDAR EL DETALLE ACTUALIZADO EN LA BASE DE DATOS
+                        detalleVentaRepository.save(detalle);
+
                     } catch (NumberFormatException e) {
                         subtotal = subtotal.add(detalle.getSubtotal_item());
                     }
@@ -207,11 +207,25 @@ public class VentaController {
                 return "redirect:/ventas/" + id + "/modificar";
             }
 
-            // Recalcular totales
-            BigDecimal impuestos = subtotal.multiply(new BigDecimal("0.13"));
-            BigDecimal total = subtotal.add(impuestos);
+            // VALIDAR QUE EL DESCUENTO NO SEA MAYOR AL SUBTOTAL
+            if (descuentoAplicado.compareTo(subtotal) > 0) {
+                model.addAttribute("error", "El descuento no puede ser mayor al subtotal de la venta.");
+                return "redirect:/ventas/" + id + "/modificar";
+            }
+
+            // VALIDAR QUE EL DESCUENTO NO SEA NEGATIVO
+            if (descuentoAplicado.compareTo(BigDecimal.ZERO) < 0) {
+                model.addAttribute("error", "El descuento no puede ser negativo.");
+                return "redirect:/ventas/" + id + "/modificar";
+            }
+
+            // RECALCULAR TOTALES CONSIDERANDO DESCUENTO
+            BigDecimal baseImponible = subtotal.subtract(descuentoAplicado);
+            BigDecimal impuestos = baseImponible.multiply(new BigDecimal("0.13"));
+            BigDecimal total = baseImponible.add(impuestos);
 
             ventaExistente.setSubtotal(subtotal);
+            ventaExistente.setDescuento_aplicado(descuentoAplicado);
             ventaExistente.setImpuestos(impuestos);
             ventaExistente.setTotal(total);
 
@@ -246,13 +260,11 @@ public class VentaController {
         }
     }
 
-
-
-
     @PostMapping("/crear")
     public String procesarFormularioCrearVenta(
             @ModelAttribute("venta") Venta venta,
             @RequestParam("librosData") String librosDataJson,
+            @RequestParam(value = "descuento_aplicado", required = false, defaultValue = "0") BigDecimal descuentoAplicado,
             HttpSession session,
             Model model) {
 
@@ -299,8 +311,24 @@ public class VentaController {
                 subtotalVenta = subtotalVenta.add(subtotalItem);
             }
 
-            BigDecimal impuestos = subtotalVenta.multiply(new BigDecimal("0.13"));
-            BigDecimal totalVenta = subtotalVenta.add(impuestos);
+            // VALIDAR QUE EL DESCUENTO NO SEA MAYOR AL SUBTOTAL
+            if (descuentoAplicado.compareTo(subtotalVenta) > 0) {
+                model.addAttribute("error", "El descuento no puede ser mayor al subtotal de la venta.");
+                model.addAttribute("libros", libroRepository.findByEstadoAndCantidad_stockGreaterThan(com.sivil.systeam.enums.Estado.activo, 0));
+                return "venta/crear-venta";
+            }
+
+            // VALIDAR QUE EL DESCUENTO NO SEA NEGATIVO
+            if (descuentoAplicado.compareTo(BigDecimal.ZERO) < 0) {
+                model.addAttribute("error", "El descuento no puede ser negativo.");
+                model.addAttribute("libros", libroRepository.findByEstadoAndCantidad_stockGreaterThan(com.sivil.systeam.enums.Estado.activo, 0));
+                return "venta/crear-venta";
+            }
+
+            // CALCULAR BASE IMPONIBLE CONSIDERANDO DESCUENTO
+            BigDecimal baseImponible = subtotalVenta.subtract(descuentoAplicado);
+            BigDecimal impuestos = baseImponible.multiply(new BigDecimal("0.13"));
+            BigDecimal totalVenta = baseImponible.add(impuestos);
 
             VentaTemporalDTO ventaTemporal = new VentaTemporalDTO();
             ventaTemporal.setNumeroFactura(numeracionService.generarNumeroFactura(ventaRepository));
@@ -309,7 +337,7 @@ public class VentaController {
             ventaTemporal.setContactoCliente(venta.getContacto_cliente());
             ventaTemporal.setIdentificacionCliente(venta.getIdentificacion_cliente());
             ventaTemporal.setSubtotal(subtotalVenta);
-            ventaTemporal.setDescuentoAplicado(BigDecimal.ZERO);
+            ventaTemporal.setDescuentoAplicado(descuentoAplicado);
             ventaTemporal.setImpuestos(impuestos);
             ventaTemporal.setTotal(totalVenta);
             ventaTemporal.setTipoPago(com.sivil.systeam.enums.MetodoPago.tarjeta);

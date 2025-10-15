@@ -122,6 +122,34 @@
             margin: 2rem 0;
             border-radius: 2px;
         }
+
+        /* Estilos para los descuentos */
+        .descuento-card {
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .descuento-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            border-color: #007bff;
+        }
+
+        .descuento-card.border-primary {
+            border-color: #007bff !important;
+            background-color: #f8f9fa !important;
+        }
+
+        .nav-tabs .nav-link.active {
+            background-color: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+
+        .input-group-text {
+            background-color: #f8f9fa;
+        }
     </style>
 </head>
 <body>
@@ -241,7 +269,16 @@
                             <label class="form-label">
                                 <i class="bi bi-percent me-2"></i>Descuento:
                             </label>
-                            <input type="number" step="0.01" th:field="*{descuento_aplicado}" class="form-control" readonly id="descuentoInput">
+                            <div class="input-group">
+                                <input type="number" step="0.01" th:field="*{descuento_aplicado}"
+                                       class="form-control" readonly id="descuentoInput" name="descuento_aplicado">
+                                <button type="button" class="btn btn-outline-primary" id="btnAbrirModalDescuentos">
+                                    <i class="bi bi-tag"></i>
+                                </button>
+                            </div>
+                            <small class="text-muted" id="motivoDescuentoText">
+                                <!-- Aquí se mostrará el motivo del descuento -->
+                            </small>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">
@@ -322,6 +359,81 @@
             </div>
         </div>
 
+        <!-- Modal para selección de descuentos -->
+        <div class="modal fade" id="modalDescuentos" tabindex="-1" aria-labelledby="modalDescuentosLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title" id="modalDescuentosLabel">
+                            <i class="bi bi-tags me-2"></i>Seleccionar Descuento
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <!-- Pestañas para diferentes tipos de descuento -->
+                        <ul class="nav nav-tabs mb-3" id="descuentoTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="fijos-tab" data-bs-toggle="tab"
+                                        data-bs-target="#fijos" type="button" role="tab">
+                                    <i class="bi bi-bookmark-star me-1"></i>Descuentos Fijos
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="personalizado-tab" data-bs-toggle="tab"
+                                        data-bs-target="#personalizado" type="button" role="tab">
+                                    <i class="bi bi-pencil-square me-1"></i>Descuento Personalizado
+                                </button>
+                            </li>
+                        </ul>
+
+                        <div class="tab-content" id="descuentoContent">
+                            <!-- Pestaña de descuentos fijos -->
+                            <div class="tab-pane fade show active" id="fijos" role="tabpanel">
+                                <div class="row g-3" id="listaDescuentosFijos">
+                                    <!-- Los descuentos fijos se cargarán aquí con JavaScript -->
+                                </div>
+                            </div>
+
+                            <!-- Pestaña de descuento personalizado -->
+                            <div class="tab-pane fade" id="personalizado" role="tabpanel">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Tipo de descuento:</label>
+                                        <select class="form-select" id="tipoDescuentoPersonalizado">
+                                            <option value="porcentaje">Porcentaje (%)</option>
+                                            <option value="monto_fijo">Monto Fijo ($)</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Valor:</label>
+                                        <input type="number" step="0.01" min="0"
+                                               class="form-control" id="valorDescuentoPersonalizado" placeholder="0.00">
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label">Motivo (opcional):</label>
+                                        <input type="text" class="form-control"
+                                               placeholder="Ej: Ajuste especial..."
+                                               id="motivoDescuentoPersonalizado">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="bi bi-x-circle me-1"></i>Cancelar
+                        </button>
+                        <button type="button" class="btn btn-success" id="btnAplicarDescuento">
+                            <i class="bi bi-check-circle me-1"></i>Aplicar Descuento
+                        </button>
+                        <button type="button" class="btn btn-outline-danger" id="btnQuitarDescuento">
+                            <i class="bi bi-trash me-1"></i>Quitar Descuento
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="mt-4 text-center">
             <button type="submit" class="btn btn-success btn-lg me-3">
                 <i class="bi bi-check-circle me-2"></i>Crear Venta
@@ -347,6 +459,141 @@
 
             let librosAgregados = [];
 
+            // ========== CONFIGURACIÓN DE DESCUENTOS ==========
+            const descuentosFijos = [
+                { id: 1, motivo: "🎉 Cliente frecuente", tipo: "porcentaje", valor: 10, activo: true },
+                { id: 2, motivo: "🔥 Promoción especial", tipo: "monto_fijo", valor: 10, activo: true },
+                { id: 3, motivo: "📦 Daño de empaque", tipo: "porcentaje", valor: 5, activo: true },
+                { id: 4, motivo: "👋 Primera compra", tipo: "porcentaje", valor: 15, activo: true },
+                { id: 5, motivo: "📚 Compra al por mayor", tipo: "monto_fijo", valor: 25, activo: true }
+            ];
+
+            let descuentoAplicado = null;
+
+            // Función para cargar descuentos fijos en el modal
+            function cargarDescuentosFijos() {
+                const container = document.getElementById('listaDescuentosFijos');
+                container.innerHTML = '';
+
+                descuentosFijos.filter(d => d.activo).forEach(descuento => {
+                    const descuentoElement = document.createElement('div');
+                    descuentoElement.className = 'col-md-6';
+                    descuentoElement.innerHTML = `
+                        <div class="card h-100 descuento-card" data-id="${descuento.id}">
+                            <div class="card-body">
+                                <h6 class="card-title">${descuento.motivo}</h6>
+                                <p class="card-text">
+                                    ${descuento.tipo === 'porcentaje'
+                                        ? `${descuento.valor}% de descuento`
+                                        : `$${descuento.valor.toFixed(2)} de descuento`}
+                                </p>
+                                <small class="text-muted">Haga clic para seleccionar</small>
+                            </div>
+                        </div>
+                    `;
+                    container.appendChild(descuentoElement);
+                });
+
+                // Agregar event listeners a las tarjetas de descuento
+                document.querySelectorAll('.descuento-card').forEach(card => {
+                    card.addEventListener('click', function() {
+                        // Remover selección anterior
+                        document.querySelectorAll('.descuento-card').forEach(c => {
+                            c.classList.remove('border-primary', 'bg-light');
+                        });
+
+                        // Seleccionar actual
+                        this.classList.add('border-primary', 'bg-light');
+
+                        const descuentoId = parseInt(this.getAttribute('data-id'));
+                        descuentoAplicado = descuentosFijos.find(d => d.id === descuentoId);
+                    });
+                });
+            }
+
+            // Función para calcular descuento
+            function calcularMontoDescuento(subtotal, descuento) {
+                if (descuento.tipo === 'porcentaje') {
+                    return subtotal * (descuento.valor / 100);
+                } else {
+                    return descuento.valor;
+                }
+            }
+
+            // Función para aplicar descuento
+            function aplicarDescuento() {
+                const subtotal = parseFloat(subtotalInput.value) || 0;
+
+                if (!descuentoAplicado) {
+                    alert('Por favor seleccione un descuento primero');
+                    return;
+                }
+
+                const montoDescuento = calcularMontoDescuento(subtotal, descuentoAplicado);
+
+                // Validar que el descuento no sea mayor al subtotal
+                if (montoDescuento > subtotal) {
+                    alert('El descuento no puede ser mayor al subtotal');
+                    return;
+                }
+
+                // Validar límite máximo del 50% para descuentos porcentuales
+                if (descuentoAplicado.tipo === 'porcentaje' && descuentoAplicado.valor > 50) {
+                    if (!confirm(`⚠️ ¿Está seguro de aplicar un descuento del ${descuentoAplicado.valor}%? Este supera el límite normal del 50%.`)) {
+                        return;
+                    }
+                }
+
+                // Aplicar descuento a los campos - MANTENER COMO READONLY
+                descuentoInput.value = montoDescuento.toFixed(2);
+
+                // Mostrar motivo del descuento
+                const motivoText = document.getElementById('motivoDescuentoText');
+                motivoText.textContent = `Motivo: ${descuentoAplicado.motivo}`;
+                motivoText.className = 'text-success fw-semibold';
+
+                // Actualizar totales
+                actualizarTotalesConDescuento();
+
+                // Cerrar modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('modalDescuentos'));
+                modal.hide();
+            }
+
+            // Función para quitar descuento
+            function quitarDescuento() {
+                descuentoAplicado = null;
+                descuentoInput.value = '0.00';
+
+                const motivoText = document.getElementById('motivoDescuentoText');
+                motivoText.textContent = '';
+                motivoText.className = 'text-muted';
+
+                actualizarTotalesConDescuento();
+
+                const modal = bootstrap.Modal.getInstance(document.getElementById('modalDescuentos'));
+                modal.hide();
+            }
+
+            // Función actualizada para calcular totales con descuento
+            function actualizarTotalesConDescuento() {
+                let subtotal = 0;
+                librosAgregados.forEach(libro => {
+                    subtotal += libro.precio * libro.cantidad;
+                });
+
+                const descuento = parseFloat(descuentoInput.value) || 0;
+                const baseImponible = Math.max(0, subtotal - descuento); // No puede ser negativo
+                const impuestos = baseImponible * 0.13;
+                const total = baseImponible + impuestos;
+
+                subtotalInput.value = subtotal.toFixed(2);
+                impuestosInput.value = impuestos.toFixed(2);
+                totalInput.value = total.toFixed(2);
+            }
+
+            // ========== LÓGICA PRINCIPAL DE VENTAS ==========
+
             // Función para verificar stock
             async function verificarStock(idLibro, cantidad) {
                 try {
@@ -370,24 +617,12 @@
 
             function actualizarTotales() {
                 let subtotal = 0;
-
-                // Calcular subtotal sumando todos los libros
                 librosAgregados.forEach(libro => {
                     subtotal += libro.precio * libro.cantidad;
                 });
 
-                // Aplicar solo IVA del 13% (El Salvador)
-                const descuento = 0;
-                const impuestos = subtotal * 0.13;
-                const total = subtotal + impuestos;
-
-                // Actualizar los campos
                 subtotalInput.value = subtotal.toFixed(2);
-                descuentoInput.value = descuento.toFixed(2);
-                impuestosInput.value = impuestos.toFixed(2);
-                totalInput.value = total.toFixed(2);
-
-                // Actualizar el campo oculto con los datos de los libros
+                actualizarTotalesConDescuento();
                 librosDataInput.value = JSON.stringify(librosAgregados);
             }
 
@@ -475,71 +710,121 @@
                 }
             });
 
-                   // Agregar validación en tiempo real de la cantidad
-        cantidadInput.addEventListener('change', async function() {
-            const id = libroSelect.value;
-            const cantidad = parseInt(this.value);
+            // Agregar validación en tiempo real de la cantidad
+            cantidadInput.addEventListener('change', async function() {
+                const id = libroSelect.value;
+                const cantidad = parseInt(this.value);
 
-            if (id && cantidad > 0) {
-                const stockDisponible = await verificarStock(id, cantidad);
-                if (!stockDisponible) {
-                    this.value = '1';
+                if (id && cantidad > 0) {
+                    const stockDisponible = await verificarStock(id, cantidad);
+                    if (!stockDisponible) {
+                        this.value = '1';
+                    }
                 }
-            }
-        });
-
-
-        function limpiarFormulario() {
-            // Limpiar campos del formulario principal
-            document.getElementById('ventaForm').reset();
-
-            // Limpiar tabla de libros agregados
-            librosAgregados = [];
-            renderTabla();
-
-            // Limpiar campos calculados
-            subtotalInput.value = '0.00';
-            descuentoInput.value = '0.00';
-            impuestosInput.value = '0.00';
-            totalInput.value = '0.00';
-            librosDataInput.value = '';
-
-            // Restablecer el select de libros
-            libroSelect.selectedIndex = 0;
-            cantidadInput.value = '1';
-
-            // Cerrar alertas si están abiertas
-            const alertas = document.querySelectorAll('.alert');
-            alertas.forEach(alerta => {
-                const bsAlert = new bootstrap.Alert(alerta);
-                bsAlert.close();
             });
 
+            function limpiarFormulario() {
+                // Limpiar campos del formulario principal
+                document.getElementById('ventaForm').reset();
 
+                // Limpiar tabla de libros agregados
+                librosAgregados = [];
+                renderTabla();
+
+                // Limpiar campos calculados
+                subtotalInput.value = '0.00';
+                descuentoInput.value = '0.00';
+                impuestosInput.value = '0.00';
+                totalInput.value = '0.00';
+                librosDataInput.value = '';
+
+                // Restablecer el select de libros
+                libroSelect.selectedIndex = 0;
+                cantidadInput.value = '1';
+
+                // Limpiar descuento aplicado
+                descuentoAplicado = null;
+                const motivoText = document.getElementById('motivoDescuentoText');
+                motivoText.textContent = '';
+                motivoText.className = 'text-muted';
+
+                // Cerrar alertas si están abiertas
+                const alertas = document.querySelectorAll('.alert');
+                alertas.forEach(alerta => {
+                    const bsAlert = new bootstrap.Alert(alerta);
+                    bsAlert.close();
+                });
+            }
+
+            // Event listener para el botón limpiar
+            document.getElementById('limpiarFormulario').addEventListener('click', limpiarFormulario);
+
+            // ========== EVENT LISTENERS PARA DESCUENTOS ==========
+
+            // Cargar descuentos fijos al iniciar
+            cargarDescuentosFijos();
+
+            // Abrir modal de descuentos
+            document.getElementById('btnAbrirModalDescuentos').addEventListener('click', function() {
+                const modal = new bootstrap.Modal(document.getElementById('modalDescuentos'));
+                modal.show();
+            });
+
+            // Aplicar descuento
+            document.getElementById('btnAplicarDescuento').addEventListener('click', aplicarDescuento);
+
+            // Quitar descuento
+            document.getElementById('btnQuitarDescuento').addEventListener('click', quitarDescuento);
+
+            // Manejar descuento personalizado
+            document.getElementById('valorDescuentoPersonalizado').addEventListener('input', function() {
+                if (this.value) {
+                    const tipo = document.getElementById('tipoDescuentoPersonalizado').value;
+                    const motivo = document.getElementById('motivoDescuentoPersonalizado').value || 'Descuento personalizado';
+
+                    descuentoAplicado = {
+                        motivo: motivo,
+                        tipo: tipo,
+                        valor: parseFloat(this.value)
+                    };
+                }
+            });
+
+            // Resetear selección de descuentos al cambiar de pestaña
+            document.querySelectorAll('#descuentoTabs .nav-link').forEach(tab => {
+                tab.addEventListener('click', function() {
+                    // Limpiar selección de descuentos fijos
+                    document.querySelectorAll('.descuento-card').forEach(c => {
+                        c.classList.remove('border-primary', 'bg-light');
+                    });
+                    descuentoAplicado = null;
+
+                    // Limpiar campos de descuento personalizado
+                    if (this.id === 'personalizado-tab') {
+                        document.getElementById('valorDescuentoPersonalizado').value = '';
+                        document.getElementById('motivoDescuentoPersonalizado').value = '';
+                    }
+                });
+            });
+        });
+
+        // Funciones para formatear contacto y DUI
+        function formatearContacto(input) {
+            let value = input.value.replace(/\D/g, ''); // Solo números
+            if (value.length > 4) {
+                value = value.substring(0, 4) + '-' + value.substring(4, 8);
+            }
+            input.value = value;
         }
 
-        // AGREGAR EVENT LISTENER PARA EL BOTÓN
-        document.getElementById('limpiarFormulario').addEventListener('click', limpiarFormulario);
-
-    });
-
-    // Funciones para formatear contacto y DUI
-    function formatearContacto(input) {
-        let value = input.value.replace(/\D/g, ''); // Solo números
-        if (value.length > 4) {
-            value = value.substring(0, 4) + '-' + value.substring(4, 8);
+        function formatearDUI(input) {
+            let value = input.value.replace(/\D/g, ''); // Solo números
+            if (value.length > 8) {
+                value = value.substring(0, 8) + '-' + value.substring(8, 9);
+            }
+            input.value = value;
         }
-        input.value = value;
-    }
-
-    function formatearDUI(input) {
-        let value = input.value.replace(/\D/g, ''); // Solo números
-        if (value.length > 8) {
-            value = value.substring(0, 8) + '-' + value.substring(8, 9);
-        }
-        input.value = value;
-    }
     </script>
 </div>
 </body>
-</html>,
+</html>
